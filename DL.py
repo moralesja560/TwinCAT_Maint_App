@@ -80,9 +80,10 @@ class hilo1(threading.Thread):
 				#send_message(Jorge_Morales,quote(f"Falla de app: {e}. Si es el 1861, por favor conectarse al PLC via Twincat System Manager. Con eso se hace la conexión ADS"),token_Tel)
 				print(e)
 				plc.close()
+				plc_dsa.close()
 				break
 			else:
-				#writelog
+				#writelog					
 				write_log(current,diameter,reference_speed,actual_speed,reference_Temp)
 				print(current,diameter,reference_speed,actual_speed,reference_Temp)
 				time.sleep(3)
@@ -91,6 +92,7 @@ class hilo1(threading.Thread):
 				# close connection
 				print("saliendo")
 				plc.close()
+				plc_dsa.close()
 				break
 	def stop(self):
 		self._stop_event.set()
@@ -119,7 +121,7 @@ class hilo2(threading.Thread):
 					self._stop_event.set()
 			else:
 				print(f"A problem occurred... Restarting Thread 1")
-				time.sleep(10)
+				time.sleep(4)
 				thread1 = hilo1()
 				thread1.start()
 				print(f"Thread 1 Started")

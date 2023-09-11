@@ -28,36 +28,45 @@ database['timestamp'] = pd.to_datetime(database['timestamp'])
 
 #agregar la columna de input diameter
 
+# 6
 database['input diameter'] = 0
+# 7
 database['output diameter'] = 0
+# 8
 database['hour'] = database['timestamp'].dt.hour
+# 9
 database["Day/Night"] = "c"
+# 10
+database["Status"] = "d"
 
 
-print(datetime.now())
+
+
 for x in range(0,database['timestamp'].count()):
+	print(database.iloc[x,0])
 	for y in range(0,dl_prod['start'].count()):
-		if database.iloc[x,0] >= dl_prod.iloc[y,36] and database.iloc[x,0] <= dl_prod.iloc[y,37]:
-			database.iloc[x,6] = dl_prod.iloc[y,6]
-			database.iloc[x,7] = dl_prod.iloc[y,17]
+		if database.iat[x,0] >= dl_prod.iat[y,36] and database.iat[x,0] <= dl_prod.iat[y,37]:
+			database.iat[x,6] = dl_prod.iat[y,6]
+			database.iat[x,7] = dl_prod.iat[y,17]
+			break
 
-for i in range(0,database['timestamp'].count()):
-	if database.iloc[i,8] >= 7 and  database.iloc[i,8] <= 19:
-		database.iloc[i,9] = "Day"
+	if database.iat[x,8] >= 7 and  database.iat[x,8] <= 19:
+		database.iat[x,9] = "Day"
 	else:
-		database.iloc[i,9] = "Night"
-	
-"""
-faltan las relaciones de diametro y de velocidad, ademas del status de tiempo muerto: Current = 0 y velocidad actual = 0 
+		database.iat[x,9] = "Night"
+	if database.iat[x,1] == 0 and database.iat[x,4] == 0:
+		database.iat[x,10] = "Stopped"
+	else:
+		database.iloc[x,10] = "Run"
 
 
-"""
 
-
-print(datetime.now())           
-
-
+# diametro
+database['reduction ratio'] = (database['output diameter']-database['input diameter'])/database['input diameter']
+#velocidad
+database['speed ratio'] = (database['Vel Actual']-database['Vel Teórica'])/database['Vel Teórica']
 
 
 
 database.to_csv(resource_path("images/finished_db.csv"),index=False)
+

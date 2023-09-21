@@ -11,7 +11,7 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 # cargamos los CSV
-database = pd.read_csv(resource_path("images/registro_corriente_df.csv"))
+database = pd.read_csv(resource_path("images/registro_corriente_df.csv"),dayfirst=True)
 dl_prod = pd.read_csv(resource_path("images/drawing_db.csv"))
 
 # convertimos la información de arranque
@@ -21,10 +21,10 @@ dl_prod['hour end'] = dl_prod['production end'].str.slice(13,18)
 dl_prod['day start'] = dl_prod['production start'].str.slice(0,10)
 dl_prod['day end'] = dl_prod['production end'].str.slice(0,10)
 
-dl_prod['start'] = pd.to_datetime(dl_prod['day start'] +" " + dl_prod['hour start'])
-dl_prod['end'] = pd.to_datetime(dl_prod['day end'] +" " + dl_prod['hour end'])
+dl_prod['start'] = pd.to_datetime(dl_prod['day start'] +" " + dl_prod['hour start'],dayfirst=True,infer_datetime_format=True)
+dl_prod['end'] = pd.to_datetime(dl_prod['day end'] +" " + dl_prod['hour end'],dayfirst=True,infer_datetime_format=True)
 
-database['timestamp'] = pd.to_datetime(database['timestamp'])
+database['timestamp'] = pd.to_datetime(database['timestamp'],dayfirst=True,infer_datetime_format=True)
 
 #agregar la columna de input diameter
 
@@ -38,12 +38,16 @@ database['hour'] = database['timestamp'].dt.hour
 database["Day/Night"] = "c"
 # 10
 database["Status"] = "d"
+# 11
+database['minute'] = database['timestamp'].dt.minute
+# 12
+database['second'] = database['timestamp'].dt.second
 
 
-
+print(datetime.now())
 
 for x in range(0,database['timestamp'].count()):
-	print(database.iloc[x,0])
+	#print(database.iloc[x,0])
 	for y in range(0,dl_prod['start'].count()):
 		if database.iat[x,0] >= dl_prod.iat[y,36] and database.iat[x,0] <= dl_prod.iat[y,37]:
 			database.iat[x,6] = dl_prod.iat[y,6]
@@ -59,7 +63,7 @@ for x in range(0,database['timestamp'].count()):
 	else:
 		database.iloc[x,10] = "Run"
 
-
+print(datetime.now())
 
 # diametro
 database['reduction ratio'] = (database['output diameter']-database['input diameter'])/database['input diameter']

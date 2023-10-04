@@ -117,7 +117,11 @@ class hilo1(threading.Thread):
 				pn_12 = plc1.read_by_name(".TP_IW_FMB12_Setup_Part_Number", plc_datatype=pyads.PLCTYPE_STRING)
 				pn_103 = plc1.read_by_name(".TP_IW_FMB22_Setup_Part_Number", plc_datatype=pyads.PLCTYPE_STRING)
 				#Daily Counter to track coil performance
-				
+				cut_01 = plc.read_by_name(".Day_Spring_Count_FMB1_1", plc_datatype=pyads.PLCTYPE_UINT)
+				cut_46 = plc.read_by_name(".Day_Spring_Count_FMB1_46", plc_datatype=pyads.PLCTYPE_UINT)				
+				cut_12 = plc1.read_by_name(".Day_Spring_Count_FMB12", plc_datatype=pyads.PLCTYPE_UINT)
+				cut_103 = plc1.read_by_name(".Day_Spring_Count_FMB22", plc_datatype=pyads.PLCTYPE_UINT)
+
 			except Exception as e:
 				print(e)
 				plc.close()
@@ -133,44 +137,44 @@ class hilo1(threading.Thread):
 			if ful103_state != coil_sensor_103:
 				# if false means that coil is starting
 				if ful103_state == False:
-					write_report('Start','FUL103', pn_103)
+					write_report('Start','FUL103', pn_103,cut_103)
 					ful103_state = coil_sensor_103
 					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)
 				elif ful103_state == True:
-					write_report('End','FUL103', pn_103)
+					write_report('End','FUL103', pn_103,cut_103)
 					ful103_state = coil_sensor_103
 					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)
 			#FMB12
 			if fmb12_state != coil_sensor_12:
 				# if false means that coil is starting
 				if fmb12_state == False:
-					write_report('Start','FMB12', pn_12)
+					write_report('Start','FMB12', pn_12,cut_12)
 					fmb12_state = coil_sensor_12
 					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)
 				elif fmb12_state == True:
-					write_report('End','FMB12', pn_12)
+					write_report('End','FMB12', pn_12,cut_12)
 					fmb12_state = coil_sensor_12
 					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)
 			#FMB01
 			if fmb01_state != coil_sensor_01:
 				# if false means that coil is starting
 				if fmb01_state == False:
-					write_report('Start','FMB1', pn_01)
+					write_report('Start','FMB1', pn_01,cut_01)
 					fmb01_state = coil_sensor_01
 					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)
 				elif fmb01_state == True:
-					write_report('End','FMB1', pn_01)
+					write_report('End','FMB1', pn_01,cut_01)
 					fmb01_state = coil_sensor_01	
 					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)			
 			#FMB46
 			if fmb46_state != coil_sensor_46:
 				# if false means that coil is starting
 				if fmb46_state == False:
-					write_report('Start','FMB46', pn_46)
+					write_report('Start','FMB46', pn_46,cut_46)
 					fmb46_state = coil_sensor_46
 					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)
 				elif fmb46_state == True:
-					write_report('End','FMB46', pn_46)
+					write_report('End','FMB46', pn_46,cut_46)
 					fmb46_state = coil_sensor_46
 					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)	
 			#Update time
@@ -256,7 +260,7 @@ def write_log(coil_sensor_46,coil_sensor_01,Automatic_01,Automatic_46,pn_46,pn_0
 	pd_concat = pd.concat([pd_log,new_row_pd])
 	pd_concat.to_csv(pd_ruta,index=False)
 
-def write_report(type,machine,part_number):
+def write_report(type,machine,part_number,cuts):
 	now = datetime.now()
 	dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
 	#print("date and time =", dt_string)	
@@ -273,17 +277,17 @@ def write_report(type,machine,part_number):
 			data = file_object.read(100)
 			if len(data) > 0 :
 				file_object.write("\n")
-				file_object.write(f" timestamp: {dt_string}, Event: {type}, Machine: {machine}, Part_Number: {part_number}")
+				file_object.write(f" timestamp: {dt_string}, Event: {type}, Machine: {machine}, Part_Number: {part_number}, Pieces: {cuts}")
 	else:
 		with open(ruta,"w+") as f:
-				f.write(f" timestamp: {dt_string}, Event: {type}, Machine: {machine}, Part_Number: {part_number}")
+				f.write(f" timestamp: {dt_string}, Event: {type}, Machine: {machine}, Part_Number: {part_number}, Pieces: {cuts}")
 	#check if pandas DataFrame exists to load the stuff or to create with dummy data.
 	if pd_file_exists:
 		pd_log = pd.read_csv(pd_ruta)
 	else:
 		pd_log = pd.DataFrame(pd_dict2)
 
-	new_row = {'timestamp' : [dt_string], 'Type' : [type], 'Machine' : [machine], 'Part_Number' : [part_number]}
+	new_row = {'timestamp' : [dt_string], 'Type' : [type], 'Machine' : [machine], 'Part_Number' : [part_number], 'Pieces' : [cuts]}
 	new_row_pd = pd.DataFrame(new_row)
 	pd_concat = pd.concat([pd_log,new_row_pd])
 	pd_concat.to_csv(pd_ruta,index=False)
@@ -291,7 +295,7 @@ def write_report(type,machine,part_number):
 
 #Pandas DataFrame dictionaries
 pd_dict = {'timestamp' : ['0'], 'FMB_46_Coil' : ['0'], 'FMB_01_Coil' : ['0'], 'Automatic_01' : ['0'], 'Automatic_46' : ['0'], 'Num_Parte_46' : ['0'], 'Num_Parte_01' : ['0'], 'FMB_12_Coil' : ['0'], 'FUL_103_Coil' : ['0'], 'Automatic_12' : ['0'], 'Automatic_103' : ['0'], 'Num_Parte_12' : ['0'], 'Num_Parte_103' : ['0']}
-pd_dict2 = {'timestamp' : ['0'], 'Type' : ['0'], 'Machine' : ['0'], 'Part_Number' : ['0']}
+pd_dict2 = {'timestamp' : ['0'], 'Type' : ['0'], 'Machine' : ['0'], 'Part_Number' : ['0'], 'Pieces': ['0']}
 
 
 if __name__ == '__main__':

@@ -72,11 +72,25 @@ def state_recover():
 		for row in csvreader:
 			rows2.append(row)
 
-		
-		fmb46_state = eval(rows2[0][0])
-		fmb01_state  = eval(rows2[0][1])
-		ful103_state = eval(rows2[0][2])
-		fmb12_state = eval(rows2[0][3])
+		if 'True' in rows2[0][0]:
+			fmb46_state = True
+		else:
+			fmb46_state = False
+
+		if 'True' in rows2[0][1]:
+			fmb01_state = True
+		else:
+			fmb01_state = False
+
+		if 'True' in rows2[0][2]:
+			ful103_state = True
+		else:
+			ful103_state = False
+
+		if 'True' in rows2[0][3]:
+			fmb12_state = True
+		else:
+			fmb12_state = False
 		return fmb46_state,fmb01_state,ful103_state,fmb12_state
 
 def state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state):
@@ -84,7 +98,7 @@ def state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state):
 
 	with open(ruta_state, "w+") as file_object:
 
-		file_object.write(f"'{fmb46_state}','{fmb01_state}','{ful103_state}','{fmb12_state}'")
+		file_object.write(f"{fmb46_state},{fmb01_state},{ful103_state},{fmb12_state}")
 
 ##--------------------the thread itself--------------#
 
@@ -97,42 +111,91 @@ class hilo1(threading.Thread):
 	#the actual thread function
 	def run(self):
 		fmb46_state,fmb01_state,ful103_state,fmb12_state = state_recover()
+
 		plc.open()
 		plc1.open()
+
+		#Handles section
+		var_handle46_1 = plc.get_handle('.I_FMB46_Ringsensor')
+		var_handle46_2 = plc.get_handle('.I_WA1_Automatik')
+		var_handle46_3 = plc.get_handle('.TP_IW_FMB46_Setup_Part_Number')	
+		var_handle46_4 = plc.get_handle('.Day_Spring_Count_FMB1_46')
+
+		var_handle01_1 = plc.get_handle('.I_FMB1_Ringsensor')
+		var_handle01_2 = plc.get_handle('.I_WA2_Automatik')
+		var_handle01_3 = plc.get_handle('.TP_IW_FMB1_Setup_Part_Number')	
+		var_handle01_4 = plc.get_handle('.Day_Spring_Count_FMB1_1')	
+
+		var_handle103_1 = plc1.get_handle('.I_FUL103_Ringsensor')
+		var_handle103_2 = plc1.get_handle('.I_WA1_Automatik')
+		var_handle103_3 = plc1.get_handle('.TP_IW_FMB22_Setup_Part_Number')	
+		var_handle103_4 = plc1.get_handle('.Day_Spring_Count_FMB22')
+		
+		var_handle12_1 = plc1.get_handle('.I_FMB12_Ringsensor')
+		var_handle12_2 = plc1.get_handle('.I_WA2_Automatik')
+		var_handle12_3 = plc1.get_handle('.TP_IW_FMB12_Setup_Part_Number')	
+		var_handle12_4 = plc1.get_handle('.Day_Spring_Count_FMB12')	
+
+
 		while True:
 			try:
 				#Coil Sensor
-				coil_sensor_46 = plc.read_by_name(".I_FMB46_Ringsensor", plc_datatype=pyads.PLCTYPE_BOOL)
-				coil_sensor_01 = plc.read_by_name(".I_FMB1_Ringsensor", plc_datatype=pyads.PLCTYPE_BOOL)
-				coil_sensor_103 = plc1.read_by_name(".I_FUL103_Ringsensor", plc_datatype=pyads.PLCTYPE_BOOL)
-				coil_sensor_12 = plc1.read_by_name(".I_FMB12_Ringsensor", plc_datatype=pyads.PLCTYPE_BOOL)
+				coil_sensor_46 = plc.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle46_1)
+				coil_sensor_01 = plc.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle01_1)
+				coil_sensor_103 = plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle103_1)
+				coil_sensor_12 = plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle12_1)
 				#Automatic Status
-				Automatic_46 = plc.read_by_name(".I_WA1_Automatik", plc_datatype=pyads.PLCTYPE_BOOL)
-				Automatic_01 = plc.read_by_name(".I_WA2_Automatik", plc_datatype=pyads.PLCTYPE_BOOL)
-				Automatic_12 = plc1.read_by_name(".I_WA1_Automatik", plc_datatype=pyads.PLCTYPE_BOOL)
-				Automatic_103 = plc1.read_by_name(".I_WA2_Automatik", plc_datatype=pyads.PLCTYPE_BOOL)				
+				Automatic_46 = plc.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle46_2)
+				Automatic_01 = plc.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle01_2)
+				Automatic_103 = plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle103_2)				
+				Automatic_12 = plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle12_2)
 				#Part Number
-				pn_46 = plc.read_by_name(".TP_IW_FMB46_Setup_Part_Number", plc_datatype=pyads.PLCTYPE_STRING)
-				pn_01 = plc.read_by_name(".TP_IW_FMB1_Setup_Part_Number", plc_datatype=pyads.PLCTYPE_STRING)
-				pn_12 = plc1.read_by_name(".TP_IW_FMB12_Setup_Part_Number", plc_datatype=pyads.PLCTYPE_STRING)
-				pn_103 = plc1.read_by_name(".TP_IW_FMB22_Setup_Part_Number", plc_datatype=pyads.PLCTYPE_STRING)
+				pn_46 = plc.read_by_name("", plc_datatype=pyads.PLCTYPE_STRING,handle=var_handle46_3)
+				pn_01 = plc.read_by_name("", plc_datatype=pyads.PLCTYPE_STRING,handle=var_handle01_3)
+				pn_12 = plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_STRING,handle=var_handle12_3)
+				pn_103 = plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_STRING,handle=var_handle103_3)
 				#Daily Counter to track coil performance
-				cut_01 = plc.read_by_name(".Day_Spring_Count_FMB1_1", plc_datatype=pyads.PLCTYPE_UINT)
-				cut_46 = plc.read_by_name(".Day_Spring_Count_FMB1_46", plc_datatype=pyads.PLCTYPE_UINT)				
-				cut_12 = plc1.read_by_name(".Day_Spring_Count_FMB12", plc_datatype=pyads.PLCTYPE_UINT)
-				cut_103 = plc1.read_by_name(".Day_Spring_Count_FMB22", plc_datatype=pyads.PLCTYPE_UINT)
+				cut_46 = plc.read_by_name("", plc_datatype=pyads.PLCTYPE_UINT,handle=var_handle46_4)
+				cut_01 = plc.read_by_name("", plc_datatype=pyads.PLCTYPE_UINT,handle=var_handle01_4)
+				cut_12 = plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_UINT,handle=var_handle12_4)
+				cut_103 = plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_UINT,handle=var_handle103_4)
 
 			except Exception as e:
 				print(e)
+				try:
+					plc.release_handle(var_handle46_1)
+					plc.release_handle(var_handle46_2)
+					plc.release_handle(var_handle46_3)
+					plc.release_handle(var_handle46_4)				
+					plc.release_handle(var_handle01_1)
+					plc.release_handle(var_handle01_2)
+					plc.release_handle(var_handle01_3)
+					plc.release_handle(var_handle01_4)
+				except:
+					pass
+				print(f"handles1 released")
+				try:
+					plc1.release_handle(var_handle12_1)
+					plc1.release_handle(var_handle12_2)
+					plc1.release_handle(var_handle12_3)
+					plc1.release_handle(var_handle12_4)				
+					plc1.release_handle(var_handle103_1)
+					plc1.release_handle(var_handle103_2)
+					plc1.release_handle(var_handle103_3)
+					plc1.release_handle(var_handle103_4)
+				except:
+					pass
+				print("handles2 released")
 				plc.close()
 				plc1.close()
 				break
 			else:
 				pass
-			#writelog					
-			write_log(coil_sensor_46,coil_sensor_01,Automatic_01,Automatic_46,pn_46,pn_01,coil_sensor_103,coil_sensor_12,Automatic_103,Automatic_12,pn_12,pn_103)
-			print(fmb46_state,fmb01_state,ful103_state,fmb12_state)
-			#SECTION TO CHECK FOR COIL FINISH
+			#-----------SECTION 1: Part Number change monitoring for coil count---------------------------
+			
+
+			
+			#-----------SECTION 2: Monitor machine status to log the information---------------------------
 			#FUL103
 			if ful103_state != coil_sensor_103:
 				# if false means that coil is starting
@@ -140,9 +203,14 @@ class hilo1(threading.Thread):
 					write_report('Start','FUL103', pn_103,cut_103)
 					ful103_state = coil_sensor_103
 					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)
+					send_message(Jorge_Morales,quote(f"Inicio de rollo: FUL103"),token_Tel)
+					print(f"Inicio de rollo: FUL103")
+				#if true means that coil finished.
 				elif ful103_state == True:
 					write_report('End','FUL103', pn_103,cut_103)
 					ful103_state = coil_sensor_103
+					send_message(Jorge_Morales,quote(f"Fin de rollo: FUL103"),token_Tel)
+					print(f"Fin de rollo: FUL103")
 					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)
 			#FMB12
 			if fmb12_state != coil_sensor_12:
@@ -151,9 +219,13 @@ class hilo1(threading.Thread):
 					write_report('Start','FMB12', pn_12,cut_12)
 					fmb12_state = coil_sensor_12
 					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)
+					send_message(Jorge_Morales,quote(f"Inicio de rollo: FMB12"),token_Tel)
+					print(f"Inicio de rollo: FMB12")
 				elif fmb12_state == True:
 					write_report('End','FMB12', pn_12,cut_12)
 					fmb12_state = coil_sensor_12
+					send_message(Jorge_Morales,quote(f"Fin de rollo: FMB12"),token_Tel)
+					print(f"Fin de rollo: FMB12")
 					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)
 			#FMB01
 			if fmb01_state != coil_sensor_01:
@@ -161,10 +233,14 @@ class hilo1(threading.Thread):
 				if fmb01_state == False:
 					write_report('Start','FMB1', pn_01,cut_01)
 					fmb01_state = coil_sensor_01
+					send_message(Jorge_Morales,quote(f"Inicio de rollo: FMB1"),token_Tel)
 					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)
+					print(f"Inicio de rollo: FMB1")
 				elif fmb01_state == True:
 					write_report('End','FMB1', pn_01,cut_01)
-					fmb01_state = coil_sensor_01	
+					fmb01_state = coil_sensor_01
+					send_message(Jorge_Morales,quote(f"Fin de rollo: FMB1"),token_Tel)
+					print(f"Fin de rollo: FMB1")
 					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)			
 			#FMB46
 			if fmb46_state != coil_sensor_46:
@@ -173,15 +249,42 @@ class hilo1(threading.Thread):
 					write_report('Start','FMB46', pn_46,cut_46)
 					fmb46_state = coil_sensor_46
 					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)
+					send_message(Jorge_Morales,quote(f"Inicio de rollo: FMB46"),token_Tel)
+					print(f"Inicio de rollo: FMB46")
 				elif fmb46_state == True:
 					write_report('End','FMB46', pn_46,cut_46)
 					fmb46_state = coil_sensor_46
-					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)	
+					send_message(Jorge_Morales,quote(f"Fin de rollo: FMB46"),token_Tel)
+					print(f"Fin de rollo: FMB46")
+					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)
+			
 			#Update time
-			time.sleep(2)
+			time.sleep(5)
+			print(f"46 sensor/state: {coil_sensor_46}/{fmb46_state}")
+			print(f"01 sensor/state: {coil_sensor_01}/{fmb01_state}")
+			print(f"12 sensor/state: {coil_sensor_12}/{fmb12_state}")
+			print(f"103 sensor/state: {coil_sensor_103}/{ful103_state}")
+			write_log(coil_sensor_46,coil_sensor_01,Automatic_01,Automatic_46,pn_46,pn_01,coil_sensor_103,coil_sensor_12,Automatic_103,Automatic_12,pn_12,pn_103)
 
 			if self.stopped == True:
 				thread1.stop()
+				plc.release_handle(var_handle46_1)
+				plc.release_handle(var_handle46_2)
+				plc.release_handle(var_handle46_3)
+				plc.release_handle(var_handle46_4)				
+				plc.release_handle(var_handle01_1)
+				plc.release_handle(var_handle01_2)
+				plc.release_handle(var_handle01_3)
+				plc.release_handle(var_handle01_4)
+				print(f"handles released")
+				plc1.release_handle(var_handle12_1)
+				plc1.release_handle(var_handle12_2)
+				plc1.release_handle(var_handle12_3)
+				plc1.release_handle(var_handle12_4)				
+				plc1.release_handle(var_handle103_1)
+				plc1.release_handle(var_handle103_2)
+				plc1.release_handle(var_handle103_3)
+				plc1.release_handle(var_handle103_4)
 				plc.close()
 				plc1.close()
 				break

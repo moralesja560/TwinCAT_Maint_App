@@ -1,8 +1,9 @@
 import pyads
 import csv
+import time
 
 # connect to the PLC
-plc = pyads.Connection('10.65.96.73.1.1', 801)
+plc = pyads.Connection('10.65.96.102.1.1', 801)
 
 # open the connection
 plc.open()
@@ -45,8 +46,14 @@ print(bReadCommand)
 plc.write_by_name('Ethernet.bACKFromPython', bReadCommand)
 """
 #read int number
-int_number = plc.read_by_name('.TP_IW_Haertenistwert', pyads.PLCTYPE_UINT)
-print(int_number)
+var_handle = plc.get_handle('.I_FMB46_Ringsensor')
+
+for i in range(0,5):
+    int_number = plc.read_by_name('', pyads.PLCTYPE_BOOL, handle=var_handle)
+    print(int_number)
+    time.sleep(3)
+
+plc.release_handle(var_handle)
 """
 #read real number
 real_number = plc.read_by_name('Ethernet.fMyRealNumber', pyads.PLCTYPE_REAL)
@@ -64,5 +71,5 @@ if len(message_from_twincat) > 1:
     plc.write_by_name('Ethernet.sMessageFromPython', message_to_twincat, plc_datatype=pyads.PLCTYPE_STRING)
 
 	# close connection
-plc.close()
 """
+plc.close()

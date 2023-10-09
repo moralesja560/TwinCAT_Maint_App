@@ -100,6 +100,38 @@ def state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state):
 
 		file_object.write(f"{fmb46_state},{fmb01_state},{ful103_state},{fmb12_state}")
 
+def pn_state_recover():
+	ruta_state_pn = resource_path("images/last_state_pn.csv")
+	file_exists = os.path.exists(ruta_state_pn)
+	if file_exists == True:
+		pass
+	else:
+		with open(ruta_state_pn,"w+") as f:
+			f.write(f"A,A,A,A")		
+
+	with open(resource_path("images/last_state.csv")) as file:
+		type(file)
+		csvreader = csv.reader(file)
+		#header = []
+		#header = next(csvreader)
+		#header
+		rows2 = []
+		for row in csvreader:
+			rows2.append(row)
+
+		fmb46_pn_state = rows2[0][0]
+		fmb01_pn_state = rows2[0][1]
+		ful103_pn_state = rows2[0][2]
+		fmb12_pn_state = rows2[0][3]
+		return fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state
+
+def pn_state_save(fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state):
+	ruta_state = resource_path("images/pn_last_state.csv")
+
+	with open(ruta_state, "w+") as file_object:
+
+		file_object.write(f"{fmb46_pn_state},{fmb01_pn_state},{ful103_pn_state},{fmb12_pn_state}")
+
 ##--------------------the thread itself--------------#
 
 class hilo1(threading.Thread):
@@ -110,7 +142,9 @@ class hilo1(threading.Thread):
 		self._stop_event = threading.Event()
 	#the actual thread function
 	def run(self):
+		# in case of failure, these will recover current info
 		fmb46_state,fmb01_state,ful103_state,fmb12_state = state_recover()
+		fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state = pn_state_recover()
 
 		plc.open()
 		plc1.open()
@@ -191,20 +225,50 @@ class hilo1(threading.Thread):
 				break
 			else:
 				pass
-			#-----------SECTION 1: Part Number change monitoring for coil count---------------------------
-			
+			#-----------SECTION 1: Coil Count Reset by part number---------------------------
+			if fmb46_pn_state != pn_46:
+				#part number has been changed
+				pn_state_save(fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state)
+				#write on the PLC
+				# reset the counter
+				run_count_46 = 0
 
-			
+			if fmb01_pn_state != pn_01:
+				#part number has been changed
+				pn_state_save(fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state)
+				#write on the PLC
+				# reset the counter
+				run_count_01 = 0
+			if ful103_pn_state != pn_103:
+				#part number has been changed
+				pn_state_save(fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state)
+				#write on the PLC
+				# reset the counter
+				run_count_103 = 0
+			if fmb12_pn_state  != pn_12:
+				#part number has been changed
+				pn_state_save(fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state)
+				#write on the PLC
+				# reset the counter
+				run_count_12 = 0
+
 			#-----------SECTION 2: Monitor machine status to log the information---------------------------
 			#FUL103
 			if ful103_state != coil_sensor_103:
 				# if false means that coil is starting
 				if ful103_state == False:
+					#1 we write the report
 					write_report('Start','FUL103', pn_103,cut_103)
+					#we change the machine state
 					ful103_state = coil_sensor_103
+					#2 we write the machine status in case comm is lost
 					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)
+					#3 optional: we inform of happened stuff
 					send_message(Jorge_Morales,quote(f"Inicio de rollo: FUL103"),token_Tel)
 					print(f"Inicio de rollo: FUL103")
+					# 5 we update the coil count 
+					run_count_103 +=1
+					# we write the coil 
 				#if true means that coil finished.
 				elif ful103_state == True:
 					write_report('End','FUL103', pn_103,cut_103)
@@ -221,6 +285,7 @@ class hilo1(threading.Thread):
 					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)
 					send_message(Jorge_Morales,quote(f"Inicio de rollo: FMB12"),token_Tel)
 					print(f"Inicio de rollo: FMB12")
+					run_count_12 +=1
 				elif fmb12_state == True:
 					write_report('End','FMB12', pn_12,cut_12)
 					fmb12_state = coil_sensor_12
@@ -236,6 +301,7 @@ class hilo1(threading.Thread):
 					send_message(Jorge_Morales,quote(f"Inicio de rollo: FMB1"),token_Tel)
 					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)
 					print(f"Inicio de rollo: FMB1")
+					run_count_01 +=1
 				elif fmb01_state == True:
 					write_report('End','FMB1', pn_01,cut_01)
 					fmb01_state = coil_sensor_01
@@ -251,6 +317,7 @@ class hilo1(threading.Thread):
 					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)
 					send_message(Jorge_Morales,quote(f"Inicio de rollo: FMB46"),token_Tel)
 					print(f"Inicio de rollo: FMB46")
+					run_count_46 +=1
 				elif fmb46_state == True:
 					write_report('End','FMB46', pn_46,cut_46)
 					fmb46_state = coil_sensor_46

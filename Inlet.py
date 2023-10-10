@@ -202,6 +202,11 @@ class hilo1(threading.Thread):
 		fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state,run_count_46,run_count_01,run_count_103,run_count_12 = pn_state_recover()
 		actual_sp_46,actual_sp_01,actual_sp_103,actual_sp_12,start_cut_coil_46,start_cut_coil_01,start_cut_coil_103,start_cut_coil_12 = cut_state_recover()
 
+		max_cut_01 = 0
+		max_cut_103 = 0
+		max_cut_12 = 0
+		max_cut_46 = 0
+
 		coil_total_pcs_12  = avg_total_cut(fmb12_pn_state)
 		coil_total_pcs_103 = avg_total_cut(ful103_pn_state)
 		coil_total_pcs_01 = avg_total_cut(fmb01_pn_state)
@@ -296,7 +301,7 @@ class hilo1(threading.Thread):
 					run_count_46 = 0
 				fmb46_pn_state = pn_46
 				print(f"Nuevo numero de parte FMB46: {pn_46}")
-				pn_state_save(fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state)
+				pn_state_save(fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state,run_count_46,run_count_01,run_count_103,run_count_12)
 			
 			if fmb01_pn_state != pn_01:
 				# reset the counter
@@ -306,7 +311,7 @@ class hilo1(threading.Thread):
 					run_count_01 = 0
 				fmb01_pn_state = pn_01
 				print(f"Nuevo numero de parte FMB01: {pn_01}")
-				pn_state_save(fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state)
+				pn_state_save(fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state,run_count_46,run_count_01,run_count_103,run_count_12)
 			if ful103_pn_state != pn_103:
 				# reset the counter
 				if ful103_state == True:	
@@ -315,7 +320,7 @@ class hilo1(threading.Thread):
 					run_count_103 = 0
 				ful103_pn_state = pn_103
 				print(f"Nuevo numero de parte FUL103: {pn_103}")
-				pn_state_save(fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state)
+				pn_state_save(fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state,run_count_46,run_count_01,run_count_103,run_count_12)
 			if fmb12_pn_state  != pn_12:
 				# reset the counter
 				if fmb12_state == True:	
@@ -324,7 +329,7 @@ class hilo1(threading.Thread):
 					run_count_12 = 0
 				fmb12_pn_state = pn_12
 				print(f"Nuevo numero de parte FMB12: {pn_12}")
-				pn_state_save(fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state)
+				pn_state_save(fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state,run_count_46,run_count_01,run_count_103,run_count_12)
 			#-----------SECTION 2: Monitor machine status to log the information---------------------------
 			#FUL103
 			if ful103_state != coil_sensor_103:
@@ -461,9 +466,11 @@ class hilo1(threading.Thread):
 			print(f"fmb01 sensor/state: {coil_sensor_01}/{fmb01_state}, coil count: {run_count_01}, actual pcs: {actual_sp_01}, progress {(actual_sp_01/coil_total_pcs_01):.0%}")
 			print(f"ful103 sensor/state: {coil_sensor_103}/{ful103_state}, coil count: {run_count_103}, actual pcs: {actual_sp_103}, progress {(actual_sp_103/coil_total_pcs_103):.0%}")
 			print(f"fmb12 sensor/state: {coil_sensor_12}/{fmb12_state}, coil count: {run_count_12}, actual pcs: {actual_sp_12}, progress {(actual_sp_12/coil_total_pcs_12):.0%}")
-			print(f"-")
+			now = datetime.now()
+			dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+			print(f"{dt_string}")
 			#write_log(coil_sensor_46,coil_sensor_01,Automatic_01,Automatic_46,pn_46,pn_01,coil_sensor_103,coil_sensor_12,Automatic_103,Automatic_12,pn_12,pn_103)
-			time.sleep(20)
+			time.sleep(5)
 
 			if self.stopped == True:
 				thread1.stop()

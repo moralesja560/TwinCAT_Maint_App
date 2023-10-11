@@ -10,9 +10,14 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 def avg_total_cut(pn):
-	pn_db_df = pd.read_csv(resource_path("images/pn_db.csv"))
-	resulting_df = pn_db_df['Part_Number'] == pn
-	pn_total_qty = pn_db_df.loc[resulting_df, 'Springs'].mean()
+	try:
+		pn = int(pn)
+	except:
+		pn = str(pn)
+	finally:
+		pn_db_df = pd.read_csv(resource_path("images/pn_db.csv"))
+		resulting_df = pn_db_df['Part_Number'] == pn
+		pn_total_qty = pn_db_df.loc[resulting_df, 'Springs'].mean()
 	
 
 	if math.isnan(pn_total_qty):
@@ -21,6 +26,6 @@ def avg_total_cut(pn):
 	return pn_total_qty
 
 
-aaa = avg_total_cut(120202)
+aaa = avg_total_cut(90151339)
 
 print(aaa)

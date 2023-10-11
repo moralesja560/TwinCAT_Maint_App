@@ -178,13 +178,17 @@ def cut_state_save(actual_sp_46,actual_sp_01,actual_sp_103,actual_sp_12,start_cu
 
 
 def avg_total_cut(pn):
-	pn_db_df = pd.read_csv(resource_path("images/pn_db.csv"))
-	resulting_df = pn_db_df['Part_Number'] == pn
-	pn_total_qty = pn_db_df.loc[resulting_df, 'Springs'].mean()
+	try:
+		pn = int(pn)
+	except:
+		pn = str(pn)
+	finally:
+		pn_db_df = pd.read_csv(resource_path("images/pn_db.csv"))
+		resulting_df = pn_db_df['Part_Number'] == pn
+		pn_total_qty = pn_db_df.loc[resulting_df, 'Springs'].mean()
 	
 	if math.isnan(pn_total_qty):
 		pn_total_qty = 1000
-
 	return pn_total_qty
 
 ##--------------------the thread itself--------------#
@@ -246,10 +250,10 @@ class hilo1(threading.Thread):
 				coil_sensor_103 = plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle103_1)
 				coil_sensor_12 = plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle12_1)
 				#Automatic Status
-				Automatic_46 = plc.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle46_2)
-				Automatic_01 = plc.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle01_2)
-				Automatic_103 = plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle103_2)				
-				Automatic_12 = plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle12_2)
+				#Automatic_46 = plc.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle46_2)
+				#Automatic_01 = plc.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle01_2)
+				#Automatic_103 = plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle103_2)				
+				#Automatic_12 = plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle12_2)
 				#Part Number
 				pn_46 = plc.read_by_name("", plc_datatype=pyads.PLCTYPE_STRING,handle=var_handle46_3)
 				pn_01 = plc.read_by_name("", plc_datatype=pyads.PLCTYPE_STRING,handle=var_handle01_3)
@@ -453,6 +457,7 @@ class hilo1(threading.Thread):
 			else:
 				actual_sp_01 = max_cut_01 + cut_01 - start_cut_coil_01
 
+			
 			cut_state_save(actual_sp_46,actual_sp_01,actual_sp_103,actual_sp_12,start_cut_coil_46,start_cut_coil_01,start_cut_coil_103,start_cut_coil_12)
 
 			#-----------SECTION 4: coil progress information------------------------

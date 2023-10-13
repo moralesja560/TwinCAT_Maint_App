@@ -146,7 +146,7 @@ def cut_state_recover():
 		pass
 	else:
 		with open(ruta_state_pn,"w+") as f:
-			f.write(f"0,0,0,0,0,0,0,0")		
+			f.write(f"0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0")		
 
 	with open(resource_path("images/cut_last_state.csv")) as file:
 		type(file)
@@ -166,15 +166,28 @@ def cut_state_recover():
 		start_cut_coil_01= int(rows2[0][5])
 		start_cut_coil_103= int(rows2[0][6])
 		start_cut_coil_12= int(rows2[0][7])
-		return actual_sp_46,actual_sp_01,actual_sp_103,actual_sp_12,start_cut_coil_46,start_cut_coil_01,start_cut_coil_103,start_cut_coil_12
+		max_cut_46= int(rows2[0][8])
+		max_cut_01= int(rows2[0][9])
+		max_cut_103= int(rows2[0][10])
+		max_cut_12= int(rows2[0][11])
+		fmb46_pn_state = rows2[0][12]
+		fmb01_pn_state = rows2[0][13]
+		ful103_pn_state = rows2[0][14]
+		fmb12_pn_state = rows2[0][15]
+		run_count_46 = int(rows2[0][16])
+		run_count_01 = int(rows2[0][17])
+		run_count_103 = int(rows2[0][18])
+		run_count_12 = int(rows2[0][19])
+
+		return actual_sp_46,actual_sp_01,actual_sp_103,actual_sp_12,start_cut_coil_46,start_cut_coil_01,start_cut_coil_103,start_cut_coil_12,max_cut_46,max_cut_01,max_cut_103,max_cut_12,fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state,run_count_46,run_count_01,run_count_103,run_count_12
 
 
-def cut_state_save(actual_sp_46,actual_sp_01,actual_sp_103,actual_sp_12,start_cut_coil_46,start_cut_coil_01,start_cut_coil_103,start_cut_coil_12):
+def cut_state_save(actual_sp_46,actual_sp_01,actual_sp_103,actual_sp_12,start_cut_coil_46,start_cut_coil_01,start_cut_coil_103,start_cut_coil_12,max_cut_46,max_cut_01,max_cut_103,max_cut_12,fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state,run_count_46,run_count_01,run_count_103,run_count_12):
 	ruta_state = resource_path("images/cut_last_state.csv")
 
 	with open(ruta_state, "w+") as file_object:
 
-		file_object.write(f"{actual_sp_46},{actual_sp_01},{actual_sp_103},{actual_sp_12},{start_cut_coil_46},{start_cut_coil_01},{start_cut_coil_103},{start_cut_coil_12}")
+		file_object.write(f"{actual_sp_46},{actual_sp_01},{actual_sp_103},{actual_sp_12},{start_cut_coil_46},{start_cut_coil_01},{start_cut_coil_103},{start_cut_coil_12},{max_cut_46},{max_cut_01},{max_cut_103},{max_cut_12},{fmb46_pn_state},{fmb01_pn_state},{ful103_pn_state},{fmb12_pn_state},{run_count_46},{run_count_01},{run_count_103},{run_count_12}")
 
 
 def avg_total_cut(pn):
@@ -189,6 +202,8 @@ def avg_total_cut(pn):
 	
 	if math.isnan(pn_total_qty):
 		pn_total_qty = 1000
+	elif pn_total_qty < 0:
+		pn_total_qty = abs(pn_total_qty)
 	return pn_total_qty
 
 ##--------------------the thread itself--------------#
@@ -203,13 +218,7 @@ class hilo1(threading.Thread):
 	def run(self):
 		# in case of failure, these will recover current info
 		fmb46_state,fmb01_state,ful103_state,fmb12_state = state_recover()
-		fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state,run_count_46,run_count_01,run_count_103,run_count_12 = pn_state_recover()
-		actual_sp_46,actual_sp_01,actual_sp_103,actual_sp_12,start_cut_coil_46,start_cut_coil_01,start_cut_coil_103,start_cut_coil_12 = cut_state_recover()
-
-		max_cut_01 = 0
-		max_cut_103 = 0
-		max_cut_12 = 0
-		max_cut_46 = 0
+		actual_sp_46,actual_sp_01,actual_sp_103,actual_sp_12,start_cut_coil_46,start_cut_coil_01,start_cut_coil_103,start_cut_coil_12,max_cut_46,max_cut_01,max_cut_103,max_cut_12,fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state,run_count_46,run_count_01,run_count_103,run_count_12 = cut_state_recover()
 
 		coil_total_pcs_12  = avg_total_cut(fmb12_pn_state)
 		coil_total_pcs_103 = avg_total_cut(ful103_pn_state)
@@ -222,24 +231,28 @@ class hilo1(threading.Thread):
 
 		#Handles section
 		var_handle46_1 = plc.get_handle('.I_FMB46_Ringsensor')
-		var_handle46_2 = plc.get_handle('.I_WA1_Automatik')
+		var_handle46_2 = plc.get_handle('.FMB46_Coil_Count_INT')
 		var_handle46_3 = plc.get_handle('.TP_IW_FMB46_Setup_Part_Number')	
 		var_handle46_4 = plc.get_handle('.Day_Spring_Count_FMB1_46')
+		var_handle46_5 = plc.get_handle('.FMB46_Coil_Progress_Prozent')
 
 		var_handle01_1 = plc.get_handle('.I_FMB1_Ringsensor')
-		var_handle01_2 = plc.get_handle('.I_WA2_Automatik')
+		var_handle01_2 = plc.get_handle('.FMB1_Coil_Count_INT')
 		var_handle01_3 = plc.get_handle('.TP_IW_FMB1_Setup_Part_Number')	
-		var_handle01_4 = plc.get_handle('.Day_Spring_Count_FMB1_1')	
+		var_handle01_4 = plc.get_handle('.Day_Spring_Count_FMB1_1')
+		var_handle01_5 = plc.get_handle('.FMB1_Coil_Progress_Prozent')
 
 		var_handle103_1 = plc1.get_handle('.I_FUL103_Ringsensor')
-		var_handle103_2 = plc1.get_handle('.I_WA1_Automatik')
+		var_handle103_2 = plc1.get_handle('.FUL103_Coil_Count_INT')
 		var_handle103_3 = plc1.get_handle('.TP_IW_FMB22_Setup_Part_Number')	
 		var_handle103_4 = plc1.get_handle('.Day_Spring_Count_FMB22')
+		var_handle103_5 = plc1.get_handle('.FUL103_Coil_Progress_Prozent')
 		
 		var_handle12_1 = plc1.get_handle('.I_FMB12_Ringsensor')
-		var_handle12_2 = plc1.get_handle('.I_WA2_Automatik')
+		var_handle12_2 = plc1.get_handle('.FMB12_Coil_Count_INT')
 		var_handle12_3 = plc1.get_handle('.TP_IW_FMB12_Setup_Part_Number')	
-		var_handle12_4 = plc1.get_handle('.Day_Spring_Count_FMB12')	
+		var_handle12_4 = plc1.get_handle('.Day_Spring_Count_FMB12')
+		var_handle12_5 = plc1.get_handle('.FMB12_Coil_Progress_Prozent')
 
 
 		while True:
@@ -271,11 +284,14 @@ class hilo1(threading.Thread):
 					plc.release_handle(var_handle46_1)
 					plc.release_handle(var_handle46_2)
 					plc.release_handle(var_handle46_3)
-					plc.release_handle(var_handle46_4)				
+					plc.release_handle(var_handle46_4)
+					plc.release_handle(var_handle46_5)
+
 					plc.release_handle(var_handle01_1)
 					plc.release_handle(var_handle01_2)
 					plc.release_handle(var_handle01_3)
 					plc.release_handle(var_handle01_4)
+					plc.release_handle(var_handle01_5)
 				except:
 					pass
 				print(f"handles1 released")
@@ -283,11 +299,14 @@ class hilo1(threading.Thread):
 					plc1.release_handle(var_handle12_1)
 					plc1.release_handle(var_handle12_2)
 					plc1.release_handle(var_handle12_3)
-					plc1.release_handle(var_handle12_4)				
+					plc1.release_handle(var_handle12_4)
+					plc1.release_handle(var_handle12_5)
+
 					plc1.release_handle(var_handle103_1)
 					plc1.release_handle(var_handle103_2)
 					plc1.release_handle(var_handle103_3)
 					plc1.release_handle(var_handle103_4)
+					plc1.release_handle(var_handle103_5)
 				except:
 					pass
 				print("handles2 released")
@@ -297,43 +316,27 @@ class hilo1(threading.Thread):
 			else:
 				pass
 			#-----------SECTION 1: Coil Count Reset by part number---------------------------
-			if fmb46_pn_state != pn_46:
+			if fmb46_pn_state != pn_46 and fmb46_state == False:
 				# reset the counter
-				if fmb46_state == True:	
-					run_count_46 = 1
-				else:
-					run_count_46 = 0
+				run_count_46 = 0
 				fmb46_pn_state = pn_46
 				print(f"Nuevo numero de parte FMB46: {pn_46}")
-				pn_state_save(fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state,run_count_46,run_count_01,run_count_103,run_count_12)
 			
-			if fmb01_pn_state != pn_01:
+			if fmb01_pn_state != pn_01  and fmb01_state == False:
 				# reset the counter
-				if fmb01_state == True:	
-					run_count_01 = 1				
-				else:
-					run_count_01 = 0
+				run_count_01 = 0
 				fmb01_pn_state = pn_01
 				print(f"Nuevo numero de parte FMB01: {pn_01}")
-				pn_state_save(fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state,run_count_46,run_count_01,run_count_103,run_count_12)
-			if ful103_pn_state != pn_103:
+			if ful103_pn_state != pn_103  and ful103_state == False:
 				# reset the counter
-				if ful103_state == True:	
-					run_count_103 = 1				
-				else:
-					run_count_103 = 0
+				run_count_103 = 0
 				ful103_pn_state = pn_103
 				print(f"Nuevo numero de parte FUL103: {pn_103}")
-				pn_state_save(fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state,run_count_46,run_count_01,run_count_103,run_count_12)
-			if fmb12_pn_state  != pn_12:
+			if fmb12_pn_state  != pn_12 and fmb12_state == False:
 				# reset the counter
-				if fmb12_state == True:	
-					run_count_12 = 1				
-				else:
-					run_count_12 = 0
+				run_count_12 = 0
 				fmb12_pn_state = pn_12
 				print(f"Nuevo numero de parte FMB12: {pn_12}")
-				pn_state_save(fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state,run_count_46,run_count_01,run_count_103,run_count_12)
 			#-----------SECTION 2: Monitor machine status to log the information---------------------------
 			#FUL103
 			if ful103_state != coil_sensor_103:
@@ -350,7 +353,7 @@ class hilo1(threading.Thread):
 					print(f"Inicio de rollo: FUL103")
 					# 5 we update the coil count 
 					run_count_103 +=1
-					# 6 We zero the coil counter
+					# 6 We store the day cuts (Acc cuts for today)
 					start_cut_coil_103 = cut_103
 					actual_sp_103 = 0
 					coil_total_pcs_103 = avg_total_cut(pn_103)
@@ -373,7 +376,7 @@ class hilo1(threading.Thread):
 					print(f"Inicio de rollo: FMB12")
 					# 5 we update the coil count 
 					run_count_12 +=1
-					# 6 We zero the coil counter
+					# 6 We store the day cuts (Acc cuts for today)
 					start_cut_coil_12 = cut_12
 					actual_sp_12 = 0
 					coil_total_pcs_12 = avg_total_cut(pn_12)
@@ -395,7 +398,7 @@ class hilo1(threading.Thread):
 					print(f"Inicio de rollo: FMB1")
 					# 5 we update the coil count 
 					run_count_01 +=1
-					# 6 We zero the coil counter
+					# 6 We store the day cuts (Acc cuts for today)
 					start_cut_coil_01 = cut_01
 					actual_sp_01 = 0
 					coil_total_pcs_01 = avg_total_cut(pn_01)
@@ -417,7 +420,7 @@ class hilo1(threading.Thread):
 					print(f"Inicio de rollo: FMB46")
 					# 5 we update the coil count 
 					run_count_46 +=1
-					# 6 We zero the coil counter
+					# 6 We store the day cuts (Acc cuts for today)
 					start_cut_coil_46 = cut_46
 					actual_sp_46 = 0
 					coil_total_pcs_46 = avg_total_cut(pn_46)
@@ -450,7 +453,7 @@ class hilo1(threading.Thread):
 				max_cut_46 = cut_46
 			else:
 				actual_sp_46 = max_cut_46 + cut_46 - start_cut_coil_46
-			#FMB46 pieces count
+			#FMB01 pieces count
 			if cut_01 >= start_cut_coil_01:
 				actual_sp_01 = cut_01 - start_cut_coil_01
 				max_cut_01 = cut_01
@@ -458,9 +461,22 @@ class hilo1(threading.Thread):
 				actual_sp_01 = max_cut_01 + cut_01 - start_cut_coil_01
 
 			
-			cut_state_save(actual_sp_46,actual_sp_01,actual_sp_103,actual_sp_12,start_cut_coil_46,start_cut_coil_01,start_cut_coil_103,start_cut_coil_12)
+			cut_state_save(actual_sp_46,actual_sp_01,actual_sp_103,actual_sp_12,start_cut_coil_46,start_cut_coil_01,start_cut_coil_103,start_cut_coil_12,max_cut_46,max_cut_01,max_cut_103,max_cut_12,fmb46_pn_state,fmb01_pn_state,ful103_pn_state,fmb12_pn_state,run_count_46,run_count_01,run_count_103,run_count_12)
 
-			#-----------SECTION 4: coil progress information------------------------
+
+
+			#-----------SECTION 4: coil progress write on PLC------------------------
+			
+			# Write coil count on PLC
+			plc.write_by_name('',run_count_46, plc_datatype=pyads.PLCTYPE_INT,handle=var_handle46_2)
+			plc.write_by_name('',run_count_01, plc_datatype=pyads.PLCTYPE_INT,handle=var_handle01_2)
+			plc1.write_by_name('',run_count_103, plc_datatype=pyads.PLCTYPE_INT,handle=var_handle103_2)
+			plc1.write_by_name('',run_count_12, plc_datatype=pyads.PLCTYPE_INT,handle=var_handle12_2)
+			#Write progress
+			plc.write_by_name('',(actual_sp_46/coil_total_pcs_46*100), plc_datatype=pyads.PLCTYPE_REAL,handle=var_handle46_5)
+			plc.write_by_name('',(actual_sp_01/coil_total_pcs_01*100), plc_datatype=pyads.PLCTYPE_REAL,handle=var_handle01_5)
+			plc1.write_by_name('',(actual_sp_103/coil_total_pcs_103*100), plc_datatype=pyads.PLCTYPE_REAL,handle=var_handle103_5)
+			plc1.write_by_name('',(actual_sp_12/coil_total_pcs_12*100), plc_datatype=pyads.PLCTYPE_REAL,handle=var_handle12_5)			
 
 			
 
@@ -479,23 +495,36 @@ class hilo1(threading.Thread):
 
 			if self.stopped == True:
 				thread1.stop()
-				plc.release_handle(var_handle46_1)
-				plc.release_handle(var_handle46_2)
-				plc.release_handle(var_handle46_3)
-				plc.release_handle(var_handle46_4)				
-				plc.release_handle(var_handle01_1)
-				plc.release_handle(var_handle01_2)
-				plc.release_handle(var_handle01_3)
-				plc.release_handle(var_handle01_4)
-				print(f"handles released")
-				plc1.release_handle(var_handle12_1)
-				plc1.release_handle(var_handle12_2)
-				plc1.release_handle(var_handle12_3)
-				plc1.release_handle(var_handle12_4)				
-				plc1.release_handle(var_handle103_1)
-				plc1.release_handle(var_handle103_2)
-				plc1.release_handle(var_handle103_3)
-				plc1.release_handle(var_handle103_4)
+				try:
+					plc.release_handle(var_handle46_1)
+					plc.release_handle(var_handle46_2)
+					plc.release_handle(var_handle46_3)
+					plc.release_handle(var_handle46_4)
+					plc.release_handle(var_handle46_5)
+
+					plc.release_handle(var_handle01_1)
+					plc.release_handle(var_handle01_2)
+					plc.release_handle(var_handle01_3)
+					plc.release_handle(var_handle01_4)
+					plc.release_handle(var_handle01_5)
+				except:
+					pass
+				print(f"handles1 released")
+				try:
+					plc1.release_handle(var_handle12_1)
+					plc1.release_handle(var_handle12_2)
+					plc1.release_handle(var_handle12_3)
+					plc1.release_handle(var_handle12_4)
+					plc1.release_handle(var_handle12_5)
+
+					plc1.release_handle(var_handle103_1)
+					plc1.release_handle(var_handle103_2)
+					plc1.release_handle(var_handle103_3)
+					plc1.release_handle(var_handle103_4)
+					plc1.release_handle(var_handle103_5)
+				except:
+					pass
+				print("handles2 released")
 				plc.close()
 				plc1.close()
 				break
@@ -610,6 +639,8 @@ def pn_database_log(part_number,cuts):
 	pd_ruta = resource_path("images/pn_db.csv")
 	pd_file_exists = os.path.exists(pd_ruta)
 	#check if pandas DataFrame exists to load the stuff or to create with dummy data.
+	if cuts < 400:
+		return
 	if pd_file_exists:
 		pd_log = pd.read_csv(pd_ruta)
 	else:

@@ -262,11 +262,6 @@ class hilo1(threading.Thread):
 				coil_sensor_01 = plc.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle01_1)
 				coil_sensor_103 = plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle103_1)
 				coil_sensor_12 = plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle12_1)
-				#Automatic Status
-				#Automatic_46 = plc.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle46_2)
-				#Automatic_01 = plc.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle01_2)
-				#Automatic_103 = plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle103_2)				
-				#Automatic_12 = plc1.read_by_name("", plc_datatype=pyads.PLCTYPE_BOOL,handle=var_handle12_2)
 				#Part Number
 				pn_46 = plc.read_by_name("", plc_datatype=pyads.PLCTYPE_STRING,handle=var_handle46_3)
 				pn_01 = plc.read_by_name("", plc_datatype=pyads.PLCTYPE_STRING,handle=var_handle01_3)
@@ -315,35 +310,14 @@ class hilo1(threading.Thread):
 				break
 			else:
 				pass
-			#-----------SECTION 1: Coil Count Reset by part number---------------------------
-			if fmb46_pn_state != pn_46 and fmb46_state == False:
-				# reset the counter
-				run_count_46 = 0
-				fmb46_pn_state = pn_46
-				print(f"Nuevo numero de parte FMB46: {pn_46}")
-			
-			if fmb01_pn_state != pn_01  and fmb01_state == False:
-				# reset the counter
-				run_count_01 = 0
-				fmb01_pn_state = pn_01
-				print(f"Nuevo numero de parte FMB01: {pn_01}")
-			if ful103_pn_state != pn_103  and ful103_state == False:
-				# reset the counter
-				run_count_103 = 0
-				ful103_pn_state = pn_103
-				print(f"Nuevo numero de parte FUL103: {pn_103}")
-			if fmb12_pn_state  != pn_12 and fmb12_state == False:
-				# reset the counter
-				run_count_12 = 0
-				fmb12_pn_state = pn_12
-				print(f"Nuevo numero de parte FMB12: {pn_12}")
+
 			#-----------SECTION 2: Monitor machine status to log the information---------------------------
 			#FUL103
 			if ful103_state != coil_sensor_103:
 				# if false means that coil is starting
 				if ful103_state == False:
 					#1 we write the report
-					write_report('Start','FUL103', pn_103,cut_103)
+					write_report('Start','FUL103', ful103_pn_state,cut_103)
 					#we change the machine state
 					ful103_state = coil_sensor_103
 					#2 we write the machine status in case comm is lost
@@ -356,20 +330,29 @@ class hilo1(threading.Thread):
 					# 6 We store the day cuts (Acc cuts for today)
 					start_cut_coil_103 = cut_103
 					actual_sp_103 = 0
-					coil_total_pcs_103 = avg_total_cut(pn_103)
+					coil_total_pcs_103 = avg_total_cut(ful103_pn_state)
 				#if true means that coil finished.
 				elif ful103_state == True:
-					write_report('End','FUL103', pn_103,cut_103)
+					#1 we write the report that the coil has finished. We use pn_state to report the saved value in case the actual value has been changed
+					write_report('End','FUL103', ful103_pn_state,cut_103)
+					#2. we change the value to False to receive the info from the sensor.
 					ful103_state = coil_sensor_103
+					#3.- we send the message that the coil has finished
 					send_message(Jorge_Morales,quote(f"Fin de rollo: FUL103"),token_Tel)
 					print(f"Fin de rollo: FUL103")
-					pn_database_log(pn_103,actual_sp_103)
+					#4.- We store the info
+					pn_database_log(ful103_pn_state,actual_sp_103)
+					#5 we check for part number change
+					if ful103_pn_state != pn_103:
+						# reset the coil amount
+						run_count_103 = 0
+						ful103_pn_state = pn_103
 					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)
 			#FMB12
 			if fmb12_state != coil_sensor_12:
 				# if false means that coil is starting
 				if fmb12_state == False:
-					write_report('Start','FMB12', pn_12,cut_12)
+					write_report('Start','FMB12', fmb12_pn_state,cut_12)
 					fmb12_state = coil_sensor_12
 					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)
 					send_message(Jorge_Morales,quote(f"Inicio de rollo: FMB12"),token_Tel)
@@ -379,19 +362,28 @@ class hilo1(threading.Thread):
 					# 6 We store the day cuts (Acc cuts for today)
 					start_cut_coil_12 = cut_12
 					actual_sp_12 = 0
-					coil_total_pcs_12 = avg_total_cut(pn_12)
+					coil_total_pcs_12 = avg_total_cut(fmb12_pn_state)
 				elif fmb12_state == True:
-					write_report('End','FMB12', pn_12,cut_12)
+					#1 we write the report that the coil has finished. We use pn_state to report the saved value in case the actual value has been changed
+					write_report('End','FMB12', fmb12_pn_state,cut_12)
+					#2. we change the value to False to receive the info from the sensor.
 					fmb12_state = coil_sensor_12
+					#3.- we send the message that the coil has finished
 					send_message(Jorge_Morales,quote(f"Fin de rollo: FMB12"),token_Tel)
 					print(f"Fin de rollo: FMB12")
-					pn_database_log(pn_12,actual_sp_12)
+					#4.- We store the info
+					pn_database_log(fmb12_pn_state,actual_sp_12)
+					#5 we check for part number change
+					if fmb12_pn_state  != pn_12:
+						# reset the counter
+						run_count_12 = 0
+						fmb12_pn_state = pn_12					
 					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)
 			#FMB01
 			if fmb01_state != coil_sensor_01:
 				# if false means that coil is starting
 				if fmb01_state == False:
-					write_report('Start','FMB1', pn_01,cut_01)
+					write_report('Start','FMB1', fmb01_pn_state,cut_01)
 					fmb01_state = coil_sensor_01
 					send_message(Jorge_Morales,quote(f"Inicio de rollo: FMB1"),token_Tel)
 					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)
@@ -401,14 +393,23 @@ class hilo1(threading.Thread):
 					# 6 We store the day cuts (Acc cuts for today)
 					start_cut_coil_01 = cut_01
 					actual_sp_01 = 0
-					coil_total_pcs_01 = avg_total_cut(pn_01)
+					coil_total_pcs_01 = avg_total_cut(fmb01_pn_state)
 				elif fmb01_state == True:
-					write_report('End','FMB1', pn_01,cut_01)
+					#1 we write the report that the coil has finished. We use pn_state to report the saved value in case the actual value has been changed
+					write_report('End','FMB1', fmb01_pn_state,cut_01)
+					#2. we change the value to False to receive the info from the sensor.
 					fmb01_state = coil_sensor_01
+					#3.- we send the message that the coil has finished
 					send_message(Jorge_Morales,quote(f"Fin de rollo: FMB1"),token_Tel)
 					print(f"Fin de rollo: FMB1")
-					pn_database_log(pn_01,actual_sp_01)
-					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)			
+					#4.- We store the info
+					pn_database_log(fmb01_pn_state,actual_sp_01)
+					#5 we check for part number change
+					if fmb01_pn_state  != pn_01:
+						# reset the counter
+						run_count_01 = 0
+						fmb01_pn_state = pn_01			
+					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)		
 			#FMB46
 			if fmb46_state != coil_sensor_46:
 				# if false means that coil is starting
@@ -425,12 +426,21 @@ class hilo1(threading.Thread):
 					actual_sp_46 = 0
 					coil_total_pcs_46 = avg_total_cut(pn_46)
 				elif fmb46_state == True:
-					write_report('End','FMB46', pn_46,cut_46)
-					pn_database_log(pn_46,actual_sp_46)
+					#1 we write the report that the coil has finished. We use pn_state to report the saved value in case the actual value has been changed
+					write_report('End','FMB46', fmb46_pn_state,cut_46)
+					#2. we change the value to False to receive the info from the sensor.
 					fmb46_state = coil_sensor_46
+					#3.- we send the message that the coil has finished
 					send_message(Jorge_Morales,quote(f"Fin de rollo: FMB46"),token_Tel)
 					print(f"Fin de rollo: FMB46")
-					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)
+					#4.- We store the info
+					pn_database_log(fmb46_pn_state,actual_sp_46)
+					#5 we check for part number change
+					if fmb46_pn_state  != pn_46:
+						# reset the counter
+						run_count_46 = 0
+						fmb46_pn_state = pn_46	
+					state_save(fmb46_state,fmb01_state,ful103_state,fmb12_state)	
 			#-----------SECTION 3: Pieces per coil monitoring---------------------------
 
 			#FUL-103 pieces count
@@ -483,10 +493,10 @@ class hilo1(threading.Thread):
 
 			#-----------SECTION 5: print/log information---------------------------
 			
-			print(f"fmb46 sensor/state: {coil_sensor_46}/{fmb46_state}, coil count: {run_count_46}, actual pcs: {actual_sp_46}, progress {(actual_sp_46/coil_total_pcs_46):.0%}")
-			print(f"fmb01 sensor/state: {coil_sensor_01}/{fmb01_state}, coil count: {run_count_01}, actual pcs: {actual_sp_01}, progress {(actual_sp_01/coil_total_pcs_01):.0%}")
-			print(f"ful103 sensor/state: {coil_sensor_103}/{ful103_state}, coil count: {run_count_103}, actual pcs: {actual_sp_103}, progress {(actual_sp_103/coil_total_pcs_103):.0%}")
-			print(f"fmb12 sensor/state: {coil_sensor_12}/{fmb12_state}, coil count: {run_count_12}, actual pcs: {actual_sp_12}, progress {(actual_sp_12/coil_total_pcs_12):.0%}")
+			print(f"FMB-46 snsr/sta: {coil_sensor_46}/{fmb46_state}, coils: {run_count_46}, actual pcs: {actual_sp_46}, progress {(actual_sp_46/coil_total_pcs_46):.0%}")
+			print(f"FMB-01 snsr/sta: {coil_sensor_01}/{fmb01_state}, coils: {run_count_01}, actual pcs: {actual_sp_01}, progress {(actual_sp_01/coil_total_pcs_01):.0%}")
+			print(f"FUL-103 snsr/sta: {coil_sensor_103}/{ful103_state}, coils: {run_count_103}, actual pcs: {actual_sp_103}, progress {(actual_sp_103/coil_total_pcs_103):.0%}")
+			print(f"FMB-12 snsr/sta: {coil_sensor_12}/{fmb12_state}, coils: {run_count_12}, actual pcs: {actual_sp_12}, progress {(actual_sp_12/coil_total_pcs_12):.0%}")
 			now = datetime.now()
 			dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
 			print(f"{dt_string}")

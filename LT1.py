@@ -59,7 +59,7 @@ def state_recover():
 		pass
 	else:
 		with open(ruta_state,"w+") as f:
-			f.write(f"0,0")		
+			f.write(f"{int(0)},{int(0)}")		
 
 	with open(resource_path("images/last_state.csv")) as file:
 		type(file)
@@ -122,11 +122,13 @@ class hilo1(threading.Thread):
 				#hourly report
 				now = datetime.now()
 				if hora != int(now.strftime("%H")):
-					send_message(Jorge_Morales,quote(f"Reporte de Hora: {hora}: {contador_gancheras}"),token_Tel)
+					if int(hora) <= 20 and int(hora) >= 7:
+						send_message(Jorge_Morales,quote(f"Reporte de Hora: {hora}-{hora+1}: {contador_gancheras}"),token_Tel)
 					#reset a la variable
 					contador_gancheras = 0
 					#se actualiza la hora
-					hora = now.strftime("%H")
+					hora = int(now.strftime("%H"))
+				
 
 			if self._stop_event.is_set():
 				# close connection
@@ -176,7 +178,7 @@ class hilo2(threading.Thread):
 def write_log(cell1):
 	now = datetime.now()
 	dt_string = now.strftime("%d/%m/%Y %H:%M:%S.%f")
-	print (dt_string)
+	#print (dt_string)
 	#print("date and time =", dt_string)	
 	mis_docs = My_Documents(5)
 	ruta = str(mis_docs)+ r"\paintline.txt"
